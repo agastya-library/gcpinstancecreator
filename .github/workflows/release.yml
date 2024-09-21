@@ -1,0 +1,71 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers when a new version tag is pushed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+
+      - name: Build binary
+        run: |
+          mkdir -p build
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o build/gcp-instance-creator-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Package into zip and tar.gz
+        run: |
+          mkdir -p release
+          tar -czvf release/gcp-instance-creator-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}.tar.gz -C build gcp-instance-creator-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcp-instance-creator-${{ github.ref_name }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: release/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: release
+
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: release/*
+          body: |
+            This release includes the following changes:
+
+            - **New feature:** ...
+            - **Bug fix:** ...
+
+            You can download the binaries for your platform from the release page.

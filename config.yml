@@ -1,0 +1,31 @@
+# this is the project id of the GCP Account. 
+# Link : https://cloud.google.com/storage/docs/projects
+project_id : "xxxxxxxx"
+
+# the zone is a combination of region and zone
+zone : "us-central1-a"
+
+# what type of machine to create. using a standard combination helps
+machine_type : "e2-medium"
+
+# then name to be given to the instance
+instance_name : "xxxxxx"
+
+# instance image details
+image_deatails:
+    project : "debian-cloud"
+    family : "debian-11"
+
+# location where the credentails file is there. this is typically downloaded from cloud.google.
+# please refer to this documentation createServiceAccountKeys.md how to get the file
+credentials_file : "xxxxxx"
+
+# the user name which we create to login via ssh
+ssh_details:
+    username : "xxxxxx"
+    publickey : "ssh-rsa xxxxxx"
+
+# this is the address name of the ip which needs to be allocated to the machine
+ip_details:
+    ipv6: true
+    name: "workstation-studio"
