@@ -8,13 +8,16 @@ import (
 
 // Define nested structures for the config
 type ImageDetails struct {
-	ImageProject string `yaml:"image_project"`
-	ImageFamily  string `yaml:"image_family"`
+	ImageProject string `yaml:"project"`
+	ImageFamily  string `yaml:"family"`
 }
 
 type IpDetails struct {
-	IpV6 bool `yaml:"ipv6"`
+	IpVersion string `yaml:"ip_version"`
 	Name string `yaml:"name"`
+	Region string `yaml:"region"`
+	NetworkTier string `yaml:"network_tier"`
+
 }
 
 type SSHDetails struct {
@@ -31,6 +34,10 @@ type Config struct {
 	Credentials  string       `yaml:"credentials_file"`
 	SSHDetails   SSHDetails   `yaml:"ssh_details"`
 	IpDetails   IpDetails   `yaml:"ip_details"`
+	NetworkSubnet  string       `yaml:"network_subnet"`
+	NetworkTier  string       `yaml:"network_tier"`
+	NetworkRegion string      `yaml:"network_region"`
+	DiskSize    int64      `yaml:"disk_size"`
 }
 
 

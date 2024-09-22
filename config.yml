@@ -27,5 +27,13 @@ ssh_details:
 
 # this is the address name of the ip which needs to be allocated to the machine
 ip_details:
-    ipv6: true
-    name: "workstation-studio"
+    ip_version: "IPV6"                     # either IPV4 or IPV6
+    name: "workstation-studio"             # Name of the Allocated IP. If you change it it will allocarte a new ip
+    region: "us-central1"                  # Region where the IP needs to be kept
+    network_tier: "PREMIUM"                # either PREMIUM or STANDARD
+
+# this is the network where we create the VM. you can use the convention "global/networks/<your-network-name>"
+network_subnet: "ipv6subnet"
+network_tier: "PREMIUM"                # either PREMIUM or STANDARD
+disk_size: "10"                        # disksize in GB
+network_region : "us-central1".        # Region where the VM needs to be setup

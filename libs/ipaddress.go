@@ -7,13 +7,16 @@ import (
 
 	"cloud.google.com/go/compute/apiv1"
 	computepb "cloud.google.com/go/compute/apiv1/computepb"
-	"google.golang.org/api/googleapi"
-	"google.golang.org/api/option"
+//	"github.com/davecgh/go-spew/spew"
+	"github.com/googleapis/gax-go/v2/apierror"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
+//	"google.golang.org/grpc/codes"
+//	"google.golang.org/grpc/status"
 )
 
 // ReserveNewGlobalExternal reserves a new global external IP address or retrieves an existing one.
-func ReserveNewGlobalExternal(w io.Writer, projectID, addressName string, isV6 bool, creds *google.Credentials) (*computepb.Address, error) {
+func ReserveNewGlobalExternal(w io.Writer, projectID string, ipDets *IpDetails, creds *google.Credentials) (*computepb.Address, error) {
 	ctx := context.Background()
 
 	client, err := compute.NewGlobalAddressesRESTClient(ctx, option.WithCredentials(creds))
@@ -25,24 +28,25 @@ func ReserveNewGlobalExternal(w io.Writer, projectID, addressName string, isV6 b
 	// Check if the address already exists
 	existingAddress, err := client.Get(ctx, &computepb.GetGlobalAddressRequest{
 		Project: projectID,
-		Address: addressName,
+		Address: ipDets.Name,
 	})
 	if err == nil {
-		fmt.Fprintf(w, "Global address %v already exists: %v\n", addressName, existingAddress.GetAddress())
+		fmt.Fprintf(w, "Global address %v already exists: %v\n", ipDets.Name, existingAddress.GetAddress())
 		return existingAddress, nil
 	} else if !isNotFoundError(err) {
 		return nil, fmt.Errorf("error checking for existing global address: %w", err)
 	}
 
-	// If address doesn't exist, reserve a new one
-	ipVersion := computepb.Address_IPV4.String()
-	if isV6 {
-		ipVersion = computepb.Address_IPV6.String()
-	}
 
+	ipv6EndPointType := "VM"
+	purpose := "NAT_AUTO"
 	address := &computepb.Address{
-		Name:      &addressName,
-		IpVersion: &ipVersion,
+		Name:      &ipDets.Name,
+		IpVersion: &ipDets.IpVersion,
+		Ipv6EndpointType: &ipv6EndPointType,
+		Region: &ipDets.Region,
+		NetworkTier:  &ipDets.NetworkTier,
+		Purpose: &purpose,
 	}
 
 	req := &computepb.InsertGlobalAddressRequest{
@@ -62,20 +66,24 @@ func ReserveNewGlobalExternal(w io.Writer, projectID, addressName string, isV6 b
 
 	newAddress, err := client.Get(ctx, &computepb.GetGlobalAddressRequest{
 		Project: projectID,
-		Address: addressName,
+		Address: ipDets.Name,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("unable to get reserved global address: %w", err)
 	}
 
-	fmt.Fprintf(w, "New global address %v reserved: %v\n", addressName, newAddress.GetAddress())
+	fmt.Fprintf(w, "New global address %v reserved: %v\n", ipDets.Name, newAddress.GetAddress())
 	return newAddress, nil
 }
 
 // Helper function to check if the error is a "not found" error
 func isNotFoundError(err error) bool {
-	if apiErr, ok := err.(*googleapi.Error); ok {
-		return apiErr.Code == 404
-	}
-	return false
+	// Convert the error to a gRPC status error and check if it is codes.NotFound
+    if apiErr, ok := err.(*apierror.APIError); ok {
+        // Now you can use apiErr as an apierror.APIError
+		return apiErr.HTTPCode() == 404
+    } else {
+        fmt.Printf("Other error: %s\n", err)
+		return false
+    }
 }

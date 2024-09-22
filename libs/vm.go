@@ -13,7 +13,7 @@ import (
 )
 
 // CreateVM creates a new VM instance based on the configuration
-func CreateVM(ctx context.Context, creds *google.Credentials, config *Config) {
+func CreateVM(ctx context.Context, creds *google.Credentials, config *Config, reservedIp string) {
 	client, err := compute.NewInstancesRESTClient(ctx, option.WithCredentials(creds))
 	if err != nil {
 		log.Fatalf("Failed to create compute client: %v", err)
@@ -42,6 +42,7 @@ func CreateVM(ctx context.Context, creds *google.Credentials, config *Config) {
 				Boot:       &isBootDisk,
 				InitializeParams: &computepb.AttachedDiskInitializeParams{
 					SourceImage: &sourceImagePath,
+					DiskSizeGb: &config.DiskSize,
 				},
 			},
 		},
@@ -50,7 +51,23 @@ func CreateVM(ctx context.Context, creds *google.Credentials, config *Config) {
 		},
 		NetworkInterfaces: []*computepb.NetworkInterface{
 			{
-				Name: new(string),
+                AccessConfigs: []*computepb.AccessConfig{
+                    {
+                        Name:  proto.String("External IPv6"),
+						NetworkTier: &config.NetworkTier,
+                    },
+                },
+				Ipv6AccessConfigs: []*computepb.AccessConfig{
+					{
+						Name: proto.String("External IP V6"),
+						ExternalIpv6: &reservedIp,
+						ExternalIpv6PrefixLength: proto.Int32(96),
+						NetworkTier: &config.NetworkTier,
+						Type: proto.String("DIRECT_IPV6"),
+					},
+				},
+				StackType: proto.String("IPV4_IPV6"),
+				Subnetwork: proto.String(fmt.Sprintf("projects/%s/regions/%s/subnetworks/%s",config.ProjectID,config.NetworkRegion,config.NetworkSubnet)),
 			},
 		},
 		Metadata: &computepb.Metadata{

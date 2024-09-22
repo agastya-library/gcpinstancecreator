@@ -37,9 +37,7 @@ func main() {
 	}
 
 	// Reserve external IP
-	addressName := conf.IpDetails.Name // Change this as needed
-	isV6 := conf.IpDetails.IpV6
-	address, err :=  libs.ReserveNewGlobalExternal(os.Stdout, conf.ProjectID, addressName, isV6, creds)
+	address, err :=  libs.ReserveNewGlobalExternal(os.Stdout, conf.ProjectID, &conf.IpDetails, creds)
 	if err != nil {
 		fmt.Printf("Error reserving global external address: %v\n", err)
 		return
@@ -48,5 +46,5 @@ func main() {
 	fmt.Printf("Successfully reserved or retrieved global address: %v\n", address.GetAddress())
 
 	// Create VM instance
-	libs.CreateVM(ctx,creds,conf)
+	libs.CreateVM(ctx,creds,conf,address.GetAddress())
 }
