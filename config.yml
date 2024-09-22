@@ -31,6 +31,7 @@ ip_details:
     name: "workstation-studio"             # Name of the Allocated IP. If you change it it will allocarte a new ip
     region: "us-central1"                  # Region where the IP needs to be kept
     network_tier: "PREMIUM"                # either PREMIUM or STANDARD
+    network_subnet: "ipv6subnet"                # either PREMIUM or STANDARD
 
 # this is the network where we create the VM. you can use the convention "global/networks/<your-network-name>"
 network_subnet: "ipv6subnet"

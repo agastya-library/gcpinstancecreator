@@ -16,19 +16,20 @@ import (
 )
 
 // ReserveNewGlobalExternal reserves a new global external IP address or retrieves an existing one.
-func ReserveNewGlobalExternal(w io.Writer, projectID string, ipDets *IpDetails, creds *google.Credentials) (*computepb.Address, error) {
+func ReserveNewRegionalExternal(w io.Writer, projectID string, ipDets *IpDetails, creds *google.Credentials) (*computepb.Address, error) {
 	ctx := context.Background()
 
-	client, err := compute.NewGlobalAddressesRESTClient(ctx, option.WithCredentials(creds))
+	client, err := compute.NewAddressesRESTClient(ctx,option.WithCredentials(creds))   // .NewRegionalAddressesRESTClient(ctx, option.WithCredentials(creds))
 	if err != nil {
-		return nil, fmt.Errorf("NewGlobalAddressesRESTClient: %w", err)
+		return nil, fmt.Errorf("NewAddressesRESTClient: %w", err)
 	}
 	defer client.Close()
 
 	// Check if the address already exists
-	existingAddress, err := client.Get(ctx, &computepb.GetGlobalAddressRequest{
+	existingAddress, err := client.Get(ctx, &computepb.GetAddressRequest{
 		Project: projectID,
 		Address: ipDets.Name,
+		Region: ipDets.Region,
 	})
 	if err == nil {
 		fmt.Fprintf(w, "Global address %v already exists: %v\n", ipDets.Name, existingAddress.GetAddress())
@@ -39,19 +40,25 @@ func ReserveNewGlobalExternal(w io.Writer, projectID string, ipDets *IpDetails, 
 
 
 	ipv6EndPointType := "VM"
-	purpose := "NAT_AUTO"
+	addressType := "EXTERNAL"
+	purpose := "GCE_ENDPOINT"
+	//regionUrl := fmt.Sprintf("projects/%s/regions/%s",projectID,ipDets.Region)
+	subnetUrl := fmt.Sprintf("projects/%s/regions/%s/subnetworks/%s",projectID,ipDets.Region,ipDets.NetworkSubnet)
 	address := &computepb.Address{
 		Name:      &ipDets.Name,
+		AddressType: &addressType,
 		IpVersion: &ipDets.IpVersion,
 		Ipv6EndpointType: &ipv6EndPointType,
-		Region: &ipDets.Region,
 		NetworkTier:  &ipDets.NetworkTier,
+		Subnetwork: &subnetUrl,
 		Purpose: &purpose,
+		Region: &ipDets.Region,
 	}
 
-	req := &computepb.InsertGlobalAddressRequest{
+	req := &computepb.InsertAddressRequest{
 		Project:         projectID,
 		AddressResource: address,
+		Region: ipDets.Region,
 	}
 
 	op, err := client.Insert(ctx, req)
@@ -64,7 +71,7 @@ func ReserveNewGlobalExternal(w io.Writer, projectID string, ipDets *IpDetails, 
 		return nil, fmt.Errorf("waiting for global address reservation operation to complete: %w", err)
 	}
 
-	newAddress, err := client.Get(ctx, &computepb.GetGlobalAddressRequest{
+	newAddress, err := client.Get(ctx, &computepb.GetAddressRequest{
 		Project: projectID,
 		Address: ipDets.Name,
 	})

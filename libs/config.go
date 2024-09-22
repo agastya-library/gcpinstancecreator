@@ -17,7 +17,7 @@ type IpDetails struct {
 	Name string `yaml:"name"`
 	Region string `yaml:"region"`
 	NetworkTier string `yaml:"network_tier"`
-
+	NetworkSubnet string `yaml:"network_subnet"`
 }
 
 type SSHDetails struct {

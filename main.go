@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// Reserve external IP
-	address, err :=  libs.ReserveNewGlobalExternal(os.Stdout, conf.ProjectID, &conf.IpDetails, creds)
+	address, err :=  libs.ReserveNewRegionalExternal(os.Stdout, conf.ProjectID, &conf.IpDetails, creds)
 	if err != nil {
 		fmt.Printf("Error reserving global external address: %v\n", err)
 		return
